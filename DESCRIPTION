@@ -4,6 +4,7 @@ Title: TODO
 Version: 0.1-0
 Description: TODO
 License: BSD 2-clause License + file LICENSE
+Copyright: See 'glmrgame/src/nelder-mead/LICENSE' for the Nelder-Mead minimizer.
 Depends:
     R (>= 3.1.0),
     pbdMPI (>= 0.3-9),
