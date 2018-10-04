@@ -1,0 +1,11 @@
+SPMD_CPPFLAGS = @SPMD_CPPFLAGS@
+SPMD_LDFLAGS = @SPMD_LDFLAGS@
+
+PKG_CFLAGS = $(SPMD_CPPFLAGS)
+PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) $(SPMD_LDFLAGS)
+
+
+OBJECTS = glmrgame_native.o svm.o nelder-mead/nelder_mead.o
+
+all: $(SHLIB)
+$(SHLIB): $(OBJECTS)
