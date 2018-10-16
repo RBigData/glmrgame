@@ -2,7 +2,6 @@
 #' 
 #' TODO
 #' 
-#' @import methods
 #' @import pbdMPI
 #' @import kazaam
 #' 

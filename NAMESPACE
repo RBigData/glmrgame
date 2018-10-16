@@ -2,6 +2,5 @@
 
 export(svm_game)
 import(kazaam)
-import(methods)
 import(pbdMPI)
 useDynLib(glmrgame,R_svm)
