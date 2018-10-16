@@ -1,0 +1,5 @@
+#!/bin/sh
+
+OMP_NUM_THREADS=2 mpirun -np 2 Rscript x.r
+#OMP_NUM_THREADS=2 mpirun -np 2 Rscript iris.r
+
