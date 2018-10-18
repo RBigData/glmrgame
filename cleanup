@@ -5,3 +5,5 @@ rm -rf ./src/*.o
 rm -rf ./src/nelder-mead/*.o
 
 rm -rf ./src/Makevars
+
+rm -rf aclocal.m4
