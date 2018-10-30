@@ -27,6 +27,12 @@ remotes::install_github("rbigdata/kazaam")
 remotes::install_github("wrathematics/curand")
 ```
 
+There is a reference cpu version of the package that you can build. However, this is not supported or recommended; please just use kazaam. But if you insist, you can install it via
+
+```r
+remotes::install_github("rbigdata/glmrgame", configure.args="--with-backend=CPU")
+```
+
 
 
 ## Benchmarks
