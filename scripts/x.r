@@ -21,24 +21,42 @@ if (comm.rank()+1L < rem)
 
 generator = function(m, n, means=c(0, 2), method="gpu")
 {
-  # if (method == "gpu")
-  #   generator = curand::rnorm
-  # else
-  generator = stats::rnorm
-  
-  response = c(-1L, 1L)
-  
-  x = matrix(0.0, m, n+1)
-  y = integer(m)
-  
-  time = comm.timer({
-    for (i in 1:m)
-    {
-      group = sample(2, size=1)
-      x[i, ] = c(1, generator(n, mean=means[group]))
-      y[i] = response[group]
-    }
-  })
+  if (method == "gpu")
+  {
+    generator = curand::rnorm
+    time = comm.timer({
+      gp1_len = floor(m/2)
+      gp2_len = m - gp1_len
+      x_gp1 = generator(gp1_len*n, mean=means[1])
+      dim(x_gp1) = c(gp1_len, n)
+      x_gp2 = generator(gp2_len*n, mean=means[2])
+      dim(x_gp2) = c(gp2_len, n)
+      x = cbind(1, rbind(x_gp1, x_gp2))
+      
+      y = integer(m) + 1L
+      y[1:gp1_len] = -1L
+      
+      id = sample(m)
+      x = x[id, ]
+      y = y[id]
+    })
+  }
+  else
+  {
+    generator = stats::rnorm
+    time = comm.timer({
+      x = matrix(0.0, m, n+1)
+      y = integer(m)
+      response = c(-1L, 1L)
+      
+      for (i in 1:m)
+      {
+        group = sample(2, size=1)
+        x[i, ] = c(1, generator(n, mean=means[group]))
+        y[i] = response[group]
+      }
+    })
+  }
   
   list(x=x, y=y, time=time)
 }

@@ -43,56 +43,49 @@ All timings are from:
 * R 3.4.4
 * OpenBLAS
 * CUDA 9.0.176
-* 16 GiB total problem size (distributed among the MPI ranks).
 
-Currently all data is generated on cpu. I plan to fix this soon for gpu benchmarks. I also, for reasons I don't wish to explain, am using 13 physical cores per gpu. The goal is to be faster even at this ratio. First we set:
+The benchmark requires of generating data from 2 different random normal distributions and using svm to classify the data. The data consists 251 columns (250 data + 1 intercept), and however many rows required for a desired total dataset size.
 
-```bash
-export GPUS=2
-export SCALER=13
-```
+For reasons I don't wish to explain, I am using 13 cores for the cpu-only runs for every one gpu of the gpu runs. The goal is for the gpu runs to be faster even at this 13-to-1 ratio. First we set:
 
-We run the benchmarks via:
-
-```bash
-mpirun -np ${GPUS} Rscript x.r gpu
-mpirun -np $(( ${GPUS}*${SCALER} )) Rscript x.r cpu
-```
-
-This gives the results:
+For a 16 GiB total problem size (distributed among the MPI ranks), we get:
 
 ```
 ### gpu --- 2 resources 
-data time: 164.373 
-svm time:  12.891 
+data time: 64.57 
+svm time:  11.971 
 accuracy:  100 
 
 ### cpu --- 26 resources (2 threads per rank)
-data time: 15.77 
-svm time:  111.725 
+data time: 16.197 
+svm time:  111.445 
 accuracy:  73.7294574940224 
 
 ### cpu --- 26 resources (1 thread per rank)
-data time: 16.308 
-svm time:  111.493 
+data time: 16.307 
+svm time:  109.208 
 accuracy:  73.7294574940224 
 ```
 
-If we re-run with 1 gpu vs 13 cores (instead of 2 vs 26 above), we get:
+Data generation for the gpu case is done of the gpu using the [curand R package](https://github.com/wrathematics/curand). However, this approach requires many more memory operations, and the local problem size is 13x larger than each rank in the cpu-only case. Hence the relatively poor performance.
+
+If we re-run with 1 gpu vs 13 cores (instead of 2 vs 26 above) on half the problem size (8 GiB total), we get:
 
 ```
 ### gpu --- 1 resources 
-data time: 149.809 
-svm time:  12.43 
-accuracy:  73.7353046018747 
+data time: 57.361 
+svm time:  10.74 
+accuracy:  100 
 
 ### cpu --- 13 resources (2 threads per rank)
-data time: 14.857 
-svm time:  97.658 
+data time: 15.057 
+svm time:  96.4 
 accuracy:  73.7324346688658 
 
 ### cpu --- 13 resources (1 thread per rank)
-data time: 14.369 
-svm time:  99.068 
+data time: 14.735 
+svm time:  96.637 
 accuracy:  73.7324346688658 
 ```
+
+The scripts are in the `scripts/` directory of the source tree of glmrgame.
