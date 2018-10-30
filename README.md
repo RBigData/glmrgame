@@ -37,6 +37,7 @@ All timings are from:
 * R 3.4.4
 * OpenBLAS
 * CUDA 9.0.176
+* 16 GiB total problem size (distributed among the MPI ranks).
 
 Currently all data is generated on cpu. I plan to fix this soon for gpu benchmarks. I also, for reasons I don't wish to explain, am using 13 physical cores per gpu. The goal is to be faster even at this ratio. First we set:
 
