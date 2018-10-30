@@ -1,5 +1,13 @@
 #!/bin/sh
+# I'm running these in docker on a dgx-1. If you are running natively, then
+# you shouldn't need all the message suppression.
 
-OMP_NUM_THREADS=2 mpirun -np 2 Rscript x.r
-#OMP_NUM_THREADS=2 mpirun -np 2 Rscript iris.r
+export OMP_NUM_THREADS=2
+export GPUS=2
+export SCALER=13
 
+mpirun -q --allow-run-as-root -np ${GPUS} Rscript x.r gpu  2>/dev/null
+mpirun -q --allow-run-as-root -np $(( ${GPUS}*${SCALER} )) Rscript x.r cpu  2>/dev/null
+
+
+#mpirun -q --allow-run-as-root -np 2 Rscript iris.r 2>/dev/null
