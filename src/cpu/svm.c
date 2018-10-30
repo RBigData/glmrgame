@@ -4,11 +4,11 @@
 #include <Rinternals.h>
 #include <stdlib.h>
 
-#include "nelder-mead/nelder_mead.h"
+#include "../common.h"
+#include "../nelder-mead/nelder_mead.h"
+#include "../mpi_utils.h"
 
-#include "common.h"
-#include "mpi_utils.h"
-#include "svm_cpu.h"
+#include "svm.h"
 
 #define TOL 1e-4
 

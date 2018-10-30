@@ -2,8 +2,9 @@
 #define GLMRGAME_SVMCPU_H_
 
 
-#include "cpublas.h"
 #include <string.h>
+
+#include "blas.h"
 
 
 typedef struct {
