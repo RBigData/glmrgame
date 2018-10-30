@@ -7,8 +7,7 @@
 
 🚨 Highly experimental 🚨
 
-glmrgame (pronounced "glimmer-game") is a package for glm-like computations
-run on gpu's, with computations distributed over MPI.
+glmrgame (pronounced "glimmer-game") is a package for glm-like computations in R ("glimmer") run on gpu's (video game hardware), with computations distributed over MPI.
 
 
 ## Installation
