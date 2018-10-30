@@ -3,4 +3,5 @@
 export(svm_game)
 import(kazaam)
 import(pbdMPI)
+useDynLib(glmrgame,R_glmrgame_init)
 useDynLib(glmrgame,R_svm)

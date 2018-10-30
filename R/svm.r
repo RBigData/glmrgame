@@ -1,8 +1,3 @@
-#' @useDynLib glmrgame R_svm
-NULL
-
-
-
 #' svm
 #' 
 #' Support vector machine.
@@ -47,6 +42,8 @@ NULL
 #' @references
 #' Efron, B. and Hastie, T., 2016. Computer Age Statistical Inference (Vol. 5).
 #' Cambridge University Press.
+#' 
+#' @useDynLib glmrgame R_svm
 #' 
 #' @export
 svm_game = function(x, y, maxiter=500)
