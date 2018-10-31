@@ -12,7 +12,7 @@ extern "C" {
 #include "../nm.h"
 }
 
-#include "blas.h"
+#include "blas.hh"
 #include "cu_utils.hh"
 
 
@@ -69,6 +69,7 @@ __global__ static void hinge_loss_sum(double *s, const int m, const int *const _
     atomicAdd(s, sum);
   }
 }
+
 
 
 static inline double svm_cost(cublasHandle_t handle,
