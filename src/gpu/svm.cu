@@ -26,12 +26,12 @@ typedef struct {
   double *__restrict__ w;
   double *__restrict__ work;
   MPI_Comm *__restrict__ comm;
-} svm_param_gpu_t;
+} svm_param_t;
 
 
 
 
-static inline double euc_norm_sq_gpu(cublasHandle_t handle, const int n, const double *const __restrict__ x)
+static inline double euc_norm_sq(cublasHandle_t handle, const int n, const double *const __restrict__ x)
 {
   double norm;
   cublasStatus_t ret = cublasDnrm2(handle, n, x, 1, &norm);
@@ -41,7 +41,7 @@ static inline double euc_norm_sq_gpu(cublasHandle_t handle, const int n, const d
 
 
 
-__global__ static void hinge_loss_sum_gpu(double *s, const int m, const int *const __restrict__ y, const double *const __restrict__ work)
+__global__ static void hinge_loss_sum(double *s, const int m, const int *const __restrict__ y, const double *const __restrict__ work)
 {
   int tid = threadIdx.x;
   int i = tid + blockIdx.x*blockDim.x;
@@ -70,7 +70,7 @@ __global__ static void hinge_loss_sum_gpu(double *s, const int m, const int *con
 }
 
 
-static inline double svm_cost_gpu(cublasHandle_t handle,
+static inline double svm_cost(cublasHandle_t handle,
   const int m, const int n, const double *const __restrict__ x,
   const int *const __restrict__ y, const double *const __restrict__ w,
   double *const __restrict__ work, const MPI_Comm *const __restrict__ comm)
@@ -84,15 +84,15 @@ static inline double svm_cost_gpu(cublasHandle_t handle,
   cudaMalloc(&s_gpu, sizeof(*s_gpu));
   cudaMemcpy(s_gpu, &s, sizeof(*s_gpu), cudaMemcpyHostToDevice);
   
-  norm = euc_norm_sq_gpu(handle, n, w);
-  
   // J_local = 1/m * sum(hinge_loss(1.0 - DATA(y)*matmult(DATA(x), w)))
   int nb = m / TPB;
   if (m % TPB)
     nb++;
   
+  norm = euc_norm_sq(handle, n, w);
+  
   mvm(handle, m, n, x, w, work);
-  hinge_loss_sum_gpu<<<nb, TPB>>>(s_gpu, m, y, work);
+  hinge_loss_sum<<<nb, TPB>>>(s_gpu, m, y, work);
   cudaMemcpy(&s, s_gpu, sizeof(*s_gpu), cudaMemcpyDeviceToHost);
   J = ((double) 1.0/m) * s;
   
@@ -105,19 +105,19 @@ static inline double svm_cost_gpu(cublasHandle_t handle,
   return J;
 }
 
-static inline void svm_nmwrap_gpu(int n, point_t *point, const void *arg)
+static inline void svm_nmwrap(int n, point_t *point, const void *arg)
 {
-  const svm_param_gpu_t *args = (const svm_param_gpu_t*) arg;
+  const svm_param_t *args = (const svm_param_t*) arg;
   cudaMemcpy(args->w, point->x, n*sizeof(double), cudaMemcpyHostToDevice);
-  point->fx = svm_cost_gpu(args->handle, args->m, n, args->x, args->y, args->w, args->work, args->comm);
+  point->fx = svm_cost(args->handle, args->m, n, args->x, args->y, args->w, args->work, args->comm);
   cudaMemcpy(point->x, args->w, n*sizeof(double), cudaMemcpyDeviceToHost);
 }
 
-static inline void svm_gpu(const int m, const int n, const double *const __restrict__ x,
+static inline void svm(const int m, const int n, const double *const __restrict__ x,
   const int *const __restrict__ y, double *const __restrict__ w, MPI_Comm *const __restrict__ comm,
   optimset_t *const __restrict__ optimset)
 {
-  svm_param_gpu_t args;
+  svm_param_t args;
   point_t start, solution;
   
   
@@ -152,7 +152,7 @@ static inline void svm_gpu(const int m, const int n, const double *const __restr
   args.work = work_gpu;
   args.comm = comm;
   
-  nelder_mead(n, &start, &solution, &svm_nmwrap_gpu, &args, optimset);
+  nelder_mead(n, &start, &solution, &svm_nmwrap, &args, optimset);
   
   for (int i=0; i<n; i++)
     w[i] = solution.x[i];
@@ -189,7 +189,7 @@ extern "C" SEXP R_svm(SEXP x, SEXP y, SEXP maxiter, SEXP comm_)
   setAttrib(ret, R_NamesSymbol, ret_names);
   
   set_nm_opts(INTEGER(maxiter)[0], &opts);
-  svm_gpu(m, n, REAL(x), INTEGER(y), REAL(w), comm, &opts);
+  svm(m, n, REAL(x), INTEGER(y), REAL(w), comm, &opts);
   
   UNPROTECT(4);
   return ret;

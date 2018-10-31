@@ -19,11 +19,11 @@ typedef struct {
   const int *restrict y;
   double *restrict work;
   MPI_Comm *restrict comm;
-} svm_param_cpu_t;
+} svm_param_t;
 
 
 
-static inline double euc_norm_sq_cpu(const int n, const double *const restrict x)
+static inline double euc_norm_sq(const int n, const double *const restrict x)
 {
   double norm = 0.0;
   for (int i=0; i<n; i++)
@@ -32,7 +32,7 @@ static inline double euc_norm_sq_cpu(const int n, const double *const restrict x
   return norm;
 }
 
-static inline double hinge_loss_sum_cpu(const int n, double *const restrict x)
+static inline double hinge_loss_sum(const int n, double *const restrict x)
 {
   double s = 0.0;
   for (int i=0; i<n; i++)
@@ -46,7 +46,7 @@ static inline double hinge_loss_sum_cpu(const int n, double *const restrict x)
 
 
 
-static inline double svm_cost_cpu(const int m, const int n, const double *const restrict x,
+static inline double svm_cost(const int m, const int n, const double *const restrict x,
   const int *const restrict y, const double *const restrict w,
   double *const restrict work, const MPI_Comm *const restrict comm)
 {
@@ -58,28 +58,28 @@ static inline double svm_cost_cpu(const int m, const int n, const double *const 
   for (int i=0; i<m; i++)
     work[i] = 1.0 - y[i]*work[i];
   
-  J = ((double) 1.0/m) * hinge_loss_sum_cpu(m, work);
+  J = ((double) 1.0/m) * hinge_loss_sum(m, work);
   
   // J = allreduce(J_local) + 1/m * 0.5 * norm2(w)
   check = MPI_Allreduce(MPI_IN_PLACE, &J, 1, MPI_DOUBLE, MPI_SUM, *comm);
   MPI_CHECK(comm, check);
   
-  J += ((double) 1.0/m) * 0.5 * euc_norm_sq_cpu(n, w);
+  J += ((double) 1.0/m) * 0.5 * euc_norm_sq(n, w);
   
   return J;
 }
 
-static inline void svm_nmwrap_cpu(int n, point_t *point, const void *arg)
+static inline void svm_nmwrap(int n, point_t *point, const void *arg)
 {
-  const svm_param_cpu_t *args = (const svm_param_cpu_t*) arg;
-  point->fx = svm_cost_cpu(args->m, n, args->x, args->y, point->x, args->work, args->comm);
+  const svm_param_t *args = (const svm_param_t*) arg;
+  point->fx = svm_cost(args->m, n, args->x, args->y, point->x, args->work, args->comm);
 }
 
-static inline void svm_cpu(const int m, const int n, const double *const restrict x,
+static inline void svm(const int m, const int n, const double *const restrict x,
   const int *const restrict y, double *const restrict w, MPI_Comm *const restrict comm,
   optimset_t *const restrict optimset)
 {
-  svm_param_cpu_t args;
+  svm_param_t args;
   point_t start, solution;
   
   double *work = malloc(m * sizeof(*work));
@@ -94,7 +94,7 @@ static inline void svm_cpu(const int m, const int n, const double *const restric
   args.work = work;
   args.comm = comm;
   
-  nelder_mead(n, &start, &solution, &svm_nmwrap_cpu, &args, optimset);
+  nelder_mead(n, &start, &solution, &svm_nmwrap, &args, optimset);
   
   for (int i=0; i<n; i++)
     w[i] = solution.x[i];
@@ -125,7 +125,7 @@ SEXP R_svm(SEXP x, SEXP y, SEXP maxiter, SEXP comm_)
   setAttrib(ret, R_NamesSymbol, ret_names);
   
   set_nm_opts(INTEGER(maxiter)[0], &opts);
-  svm_cpu(m, n, REAL(x), INTEGER(y), REAL(w), comm, &opts);
+  svm(m, n, REAL(x), INTEGER(y), REAL(w), comm, &opts);
   
   UNPROTECT(4);
   return ret;
