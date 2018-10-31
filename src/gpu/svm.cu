@@ -141,6 +141,17 @@ static inline void svm(const int m, const int n, const double *const __restrict_
   cudaMalloc(&y_gpu, m*sizeof(*y_gpu));
   cudaMalloc(&w_gpu, n*sizeof(*w_gpu));
   cudaMalloc(&work_gpu, m*sizeof(*work_gpu));
+  cudaMalloc(&s_gpu, sizeof(*s_gpu));
+  
+  if (x_gpu == NULL || y_gpu == NULL || w_gpu == NULL || work_gpu == NULL || s_gpu == NULL)
+  {
+    CUFREE(x_gpu);
+    CUFREE(y_gpu);
+    CUFREE(w_gpu);
+    CUFREE(work_gpu);
+    CUFREE(s_gpu);
+    error("Unable to allocate device memory");
+  }
   
   cudaMemcpy(x_gpu, x, m*n*sizeof(*x), cudaMemcpyHostToDevice);
   cudaMemcpy(y_gpu, y, m*sizeof(*y), cudaMemcpyHostToDevice);
