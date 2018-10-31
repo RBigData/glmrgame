@@ -81,19 +81,20 @@ static inline double svm_cost(cublasHandle_t handle,
   int check;
   double J;
   double norm;
-  double s_cpu = 0.0;
+  double s_cpu;
   
-  cudaMemset(s, 0, 1*sizeof(*s));
-  
-  // J_local = 1/m * sum(hinge_loss(1.0 - DATA(y)*matmult(DATA(x), w)))
   int nb = m / TPB;
   if (m % TPB)
     nb++;
   
+  // J_local = 1/m * sum(hinge_loss(1.0 - y * (x %*% w)))
   norm = euc_norm_sq(handle, n, w);
   
   mvm(handle, m, n, x, w, work);
+  
+  cudaMemset(s, 0, 1*sizeof(*s));
   hinge_loss_sum<<<nb, TPB>>>(s, m, y, work);
+  
   cudaMemcpy(&s_cpu, s, sizeof(*s), cudaMemcpyDeviceToHost);
   J = ((double) 1.0/m) * s_cpu;
   
@@ -166,6 +167,7 @@ static inline void svm(const int m, const int n, const double *const __restrict_
   args.x = x_gpu;
   args.y = y_gpu;
   args.w = w_gpu;
+  args.s = s_gpu;
   args.work = work_gpu;
   args.comm = comm;
   
