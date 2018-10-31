@@ -25,6 +25,7 @@ typedef struct {
   const int *__restrict__ y;
   double *__restrict__ w;
   double *__restrict__ work;
+  double *__restrict__ s;
   MPI_Comm *__restrict__ comm;
 } svm_param_t;
 
@@ -73,16 +74,15 @@ __global__ static void hinge_loss_sum(double *s, const int m, const int *const _
 static inline double svm_cost(cublasHandle_t handle,
   const int m, const int n, const double *const __restrict__ x,
   const int *const __restrict__ y, const double *const __restrict__ w,
-  double *const __restrict__ work, const MPI_Comm *const __restrict__ comm)
+  double *const __restrict__ s, double *const __restrict__ work,
+  const MPI_Comm *const __restrict__ comm)
 {
   int check;
   double J;
   double norm;
-  double s = 0.0;
-  double *s_gpu;
+  double s_cpu = 0.0;
   
-  cudaMalloc(&s_gpu, sizeof(*s_gpu));
-  cudaMemcpy(s_gpu, &s, sizeof(*s_gpu), cudaMemcpyHostToDevice);
+  cudaMemset(s, 0, 1*sizeof(*s));
   
   // J_local = 1/m * sum(hinge_loss(1.0 - DATA(y)*matmult(DATA(x), w)))
   int nb = m / TPB;
@@ -92,9 +92,9 @@ static inline double svm_cost(cublasHandle_t handle,
   norm = euc_norm_sq(handle, n, w);
   
   mvm(handle, m, n, x, w, work);
-  hinge_loss_sum<<<nb, TPB>>>(s_gpu, m, y, work);
-  cudaMemcpy(&s, s_gpu, sizeof(*s_gpu), cudaMemcpyDeviceToHost);
-  J = ((double) 1.0/m) * s;
+  hinge_loss_sum<<<nb, TPB>>>(s, m, y, work);
+  cudaMemcpy(&s_cpu, s, sizeof(*s), cudaMemcpyDeviceToHost);
+  J = ((double) 1.0/m) * s_cpu;
   
   // J = allreduce(J_local) + 1/m * 0.5 * norm2(w)
   check = MPI_Allreduce(MPI_IN_PLACE, &J, 1, MPI_DOUBLE, MPI_SUM, *comm);
@@ -105,13 +105,17 @@ static inline double svm_cost(cublasHandle_t handle,
   return J;
 }
 
+
+
 static inline void svm_nmwrap(int n, point_t *point, const void *arg)
 {
   const svm_param_t *args = (const svm_param_t*) arg;
   cudaMemcpy(args->w, point->x, n*sizeof(double), cudaMemcpyHostToDevice);
-  point->fx = svm_cost(args->handle, args->m, n, args->x, args->y, args->w, args->work, args->comm);
+  point->fx = svm_cost(args->handle, args->m, n, args->x, args->y, args->w, args->s, args->work, args->comm);
   cudaMemcpy(point->x, args->w, n*sizeof(double), cudaMemcpyDeviceToHost);
 }
+
+
 
 static inline void svm(const int m, const int n, const double *const __restrict__ x,
   const int *const __restrict__ y, double *const __restrict__ w, MPI_Comm *const __restrict__ comm,
@@ -131,6 +135,7 @@ static inline void svm(const int m, const int n, const double *const __restrict_
   int *y_gpu;
   double *w_gpu;
   double *work_gpu;
+  double *s_gpu;
   
   cudaMalloc(&x_gpu, m*n*sizeof(*x_gpu));
   cudaMalloc(&y_gpu, m*sizeof(*y_gpu));
