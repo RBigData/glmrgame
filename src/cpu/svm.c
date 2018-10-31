@@ -6,11 +6,9 @@
 #include <string.h>
 
 #include "../common.h"
-#include "../nelder-mead/nelder_mead.h"
 #include "../mpi_utils.h"
+#include "../nm.h"
 #include "blas.h"
-
-#define TOL 1e-4
 
 
 
@@ -103,17 +101,6 @@ static inline void svm_cpu(const int m, const int n, const double *const restric
   
   free(solution.x);
   free(work);
-}
-
-
-
-static inline void set_nm_opts(const int maxiter, optimset_t *const restrict opts)
-{
-  opts->tolx = TOL;         // tolerance on the simplex solutions coordinates
-  opts->tolf = TOL;         // tolerance on the function value
-  opts->max_iter = maxiter; // maximum number of allowed iterations
-  opts->max_eval = maxiter; // maximum number of allowed function evaluations
-  opts->verbose = 0;        // toggle verbose output during minimization
 }
 
 

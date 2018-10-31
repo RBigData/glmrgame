@@ -9,13 +9,11 @@ extern "C" {
 
 #include "../common.h"
 #include "../mpi_utils.h"
-#include "../nelder-mead/nelder_mead.h"
+#include "../nm.h"
 }
 
 #include "blas.h"
 #include "cu_utils.hh"
-
-#define TOL 1e-4
 
 
 
@@ -169,16 +167,6 @@ static inline void svm_gpu(const int m, const int n, const double *const __restr
   free(solution.x);
 }
 
-
-
-static inline void set_nm_opts(const int maxiter, optimset_t *const __restrict__ opts)
-{
-  opts->tolx = TOL;         // tolerance on the simplex solutions coordinates
-  opts->tolf = TOL;         // tolerance on the function value
-  opts->max_iter = maxiter; // maximum number of allowed iterations
-  opts->max_eval = maxiter; // maximum number of allowed function evaluations
-  opts->verbose = 0;        // toggle verbose output during minimization
-}
 
 
 extern "C" SEXP R_svm(SEXP x, SEXP y, SEXP maxiter, SEXP comm_)
