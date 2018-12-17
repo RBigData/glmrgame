@@ -2,6 +2,10 @@
 #define GLMRGAME_MPIUTILS_
 
 
+#include <mpi.h>
+#include <Rinternals.h>
+
+
 #define MPI_CHECK(comm, check) if (check != MPI_SUCCESS) R_mpi_throw_err(check, comm);
 
 static inline void R_mpi_throw_err(int check, const MPI_Comm *comm)

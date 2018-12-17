@@ -1,13 +1,16 @@
+#ifndef GLMRGAME_NELDERMEAD_H_
+#define GLMRGAME_NELDERMEAD_H_
+
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
 
-#define RHO 1.0
-#define CHI 2.0
-#define GAMMA 0.5
-#define SIGMA 0.5
+#define NM_RHO 1.0
+#define NM_CHI 2.0
+#define NM_GAMMA 0.5
+#define NM_SIGMA 0.5
 #define SQUARE(x) ((x) * (x))
 
 // define a generic point containing a position (x) and a value (fx)
@@ -207,11 +210,11 @@ void nelder_mead(int n, const point_t<REAL> *start, point_t<REAL> *solution,
     if (optimset->verbose) {
       printf("Iteration %04d     ", iter_count);
     }
-    update_point(&simplex, &centroid, RHO, &point_r);
+    update_point(&simplex, &centroid, (REAL) NM_RHO, &point_r);
     cost_function(n, &point_r, args);
     eval_count++;
     if (point_r.fx < simplex.p[0].fx) {
-      update_point(&simplex, &centroid, RHO * CHI, &point_e);
+      update_point(&simplex, &centroid, (REAL) (NM_RHO * NM_CHI), &point_e);
       cost_function(n, &point_e, args);
       eval_count++;
       if (point_e.fx < point_r.fx) {
@@ -236,7 +239,7 @@ void nelder_mead(int n, const point_t<REAL> *start, point_t<REAL> *solution,
         copy_point(n, &point_r, simplex.p + n);
       } else {
         if (point_r.fx < simplex.p[n].fx) {
-          update_point(&simplex, &centroid, RHO * GAMMA, &point_c);
+          update_point(&simplex, &centroid, (REAL) (NM_RHO * NM_GAMMA), &point_c);
           cost_function(n, &point_c, args);
           eval_count++;
           if (point_c.fx <= point_r.fx) {
@@ -253,7 +256,7 @@ void nelder_mead(int n, const point_t<REAL> *start, point_t<REAL> *solution,
             shrink = 1;
           }
         } else {
-          update_point(&simplex, &centroid, -GAMMA, &point_c);
+          update_point(&simplex, &centroid, (REAL) -NM_GAMMA, &point_c);
           cost_function(n, &point_c, args);
           eval_count++;
           if (point_c.fx <= simplex.p[n].fx) {
@@ -276,7 +279,7 @@ void nelder_mead(int n, const point_t<REAL> *start, point_t<REAL> *solution,
       for (int i = 1; i < n + 1; i++) {
         for (int j = 0; j < n; j++) {
           simplex.p[i].x[j] = simplex.p[0].x[j] +
-                              SIGMA * (simplex.p[i].x[j] - simplex.p[0].x[j]);
+                              ((REAL) NM_SIGMA) * (simplex.p[i].x[j] - simplex.p[0].x[j]);
         }
         cost_function(n, simplex.p + i, args);
         eval_count++;
@@ -313,3 +316,6 @@ void nelder_mead(int n, const point_t<REAL> *start, point_t<REAL> *solution,
   }
   free(simplex.p);
 }
+
+
+#endif

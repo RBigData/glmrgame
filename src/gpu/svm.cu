@@ -1,22 +1,17 @@
-#include <cublas_v2.h>
+#include <cstdlib>
+#include <float/float32.h>
 #include <mpi.h>
-
-extern "C" {
-  // #include <float/float32.h>
-  // #include <float/slapack.h>
 #include <Rinternals.h>
-#include <stdlib.h>
 
 #include "../common.h"
 #include "../mpi_utils.h"
-}
+#include "../nelder-mead/nelder_mead.hpp"
+#include "../nm.h"
 
 #include "blas.hh"
 #include "cu_utils.hh"
 
 
-#include "../nelder-mead/nelder_mead.hpp"
-#include "../nm.h"
 
 template <typename REAL>
 struct svm_param_t {
@@ -33,13 +28,14 @@ struct svm_param_t {
 
 
 
-template <typename REAL>
-static inline REAL euc_norm_sq(cublasHandle_t handle, const int n, const REAL *const __restrict__ x)
+static inline int allreduce1(float *const __restrict__ J, const MPI_Comm comm)
 {
-  REAL norm;
-  cublasStatus_t ret = cublasDnrm2(handle, n, x, 1, &norm);
-  
-  return norm;
+  return MPI_Allreduce(MPI_IN_PLACE, J, 1, MPI_FLOAT, MPI_SUM, comm);
+}
+
+static inline int allreduce1(double *const __restrict__ J, const MPI_Comm comm)
+{
+  return MPI_Allreduce(MPI_IN_PLACE, J, 1, MPI_DOUBLE, MPI_SUM, comm);
 }
 
 
@@ -103,7 +99,7 @@ static inline REAL svm_cost(cublasHandle_t handle,
   J = ((REAL) 1.0/m) * s_cpu;
   
   // J = allreduce(J_local) + 1/m * 0.5 * norm2(w)
-  check = MPI_Allreduce(MPI_IN_PLACE, &J, 1, MPI_DOUBLE, MPI_SUM, *comm);
+  check = allreduce1(&J, *comm);
   MPI_CHECK(comm, check);
   
   J += ((REAL) 1.0/m) * 0.5 * norm;
@@ -197,24 +193,37 @@ static inline void svm(const int m, const int n, const REAL *const __restrict__ 
 extern "C" SEXP R_svm(SEXP x, SEXP y, SEXP maxiter, SEXP comm_)
 {
   SEXP ret, ret_names, w, niters;
-  optimset_t<double> opts;
   MPI_Comm *comm = get_mpi_comm_from_Robj(comm_);
   const int m = nrows(x);
   const int n = ncols(x);
   
   PROTECT(ret = allocVector(VECSXP, 2));
   PROTECT(ret_names = allocVector(STRSXP, 2));
-  PROTECT(w = allocVector(REALSXP, n));
   PROTECT(niters = allocVector(INTSXP, 1));
+  
+  SET_STRING_ELT(ret_names, 0, mkChar("w"));
+  SET_STRING_ELT(ret_names, 1, mkChar("niters"));
+  
+  if (TYPEOF(x) == REALSXP)
+  {
+    PROTECT(w = allocVector(REALSXP, n));
+    
+    optimset_t<double> opts;
+    set_nm_opts<double>(INTEGER(maxiter)[0], &opts);
+    svm<double>(m, n, REAL(x), INTEGER(y), REAL(w), comm, &opts);
+  }
+  else if (TYPEOF(x) == INTSXP)
+  {
+    PROTECT(w = allocVector(INTSXP, n));
+  
+    optimset_t<float> opts;
+    set_nm_opts<float>(INTEGER(maxiter)[0], &opts);
+    svm<float>(m, n, FLOAT(x), INTEGER(y), FLOAT(w), comm, &opts);
+  }
   
   SET_VECTOR_ELT(ret, 0, w);
   SET_VECTOR_ELT(ret, 1, niters);
-  SET_STRING_ELT(ret_names, 0, mkChar("w"));
-  SET_STRING_ELT(ret_names, 1, mkChar("niters"));
   setAttrib(ret, R_NamesSymbol, ret_names);
-  
-  set_nm_opts<double>(INTEGER(maxiter)[0], &opts);
-  svm<double>(m, n, REAL(x), INTEGER(y), REAL(w), comm, &opts);
   
   UNPROTECT(4);
   return ret;
