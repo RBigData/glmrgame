@@ -68,7 +68,7 @@ svm_game = function(x, y, maxiter=500)
     storage.mode(y@Data) = "integer"
   
   ret = .Call(R_svm, x_data, DATA(y), maxiter, comm_ptr)
-  if (is.float(x_data))
+  if (is.float(DATA(x)))
     ret$w = float32(ret$w)
   
   ret
