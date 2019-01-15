@@ -1,48 +1,47 @@
-#include <cublas_v2.h>
+#include <cstdlib>
+#include <float/float32.h>
 #include <mpi.h>
-
-extern "C" {
-  // #include <float/float32.h>
-  // #include <float/slapack.h>
 #include <Rinternals.h>
-#include <stdlib.h>
 
 #include "../common.h"
 #include "../mpi_utils.h"
+#include "../nelder-mead/nelder_mead.hpp"
 #include "../nm.h"
-}
 
 #include "blas.hh"
 #include "cu_utils.hh"
 
 
 
-typedef struct {
+template <typename REAL>
+struct svm_param_t {
   cublasHandle_t handle;
   int m;
   int n;
-  const double *__restrict__ x;
+  const REAL *__restrict__ x;
   const int *__restrict__ y;
-  double *__restrict__ w;
-  double *__restrict__ work;
-  double *__restrict__ s;
+  REAL *__restrict__ w;
+  REAL *__restrict__ work;
+  REAL *__restrict__ s;
   MPI_Comm *__restrict__ comm;
-} svm_param_t;
+};
 
 
 
-
-static inline double euc_norm_sq(cublasHandle_t handle, const int n, const double *const __restrict__ x)
+static inline int allreduce1(float *const __restrict__ J, const MPI_Comm comm)
 {
-  double norm;
-  cublasStatus_t ret = cublasDnrm2(handle, n, x, 1, &norm);
-  
-  return norm;
+  return MPI_Allreduce(MPI_IN_PLACE, J, 1, MPI_FLOAT, MPI_SUM, comm);
+}
+
+static inline int allreduce1(double *const __restrict__ J, const MPI_Comm comm)
+{
+  return MPI_Allreduce(MPI_IN_PLACE, J, 1, MPI_DOUBLE, MPI_SUM, comm);
 }
 
 
 
-__global__ static void hinge_loss_sum(double *s, const int m, const int *const __restrict__ y, const double *const __restrict__ work)
+template <typename REAL>
+__global__ static void hinge_loss_sum(REAL *s, const int m, const int *const __restrict__ y, const REAL *const __restrict__ work)
 {
   int tid = threadIdx.x;
   int i = tid + blockIdx.x*blockDim.x;
@@ -50,9 +49,9 @@ __global__ static void hinge_loss_sum(double *s, const int m, const int *const _
   if (i >= m)
     return;
   
-  __shared__ double temp[TPB];
+  __shared__ REAL temp[TPB];
   
-  double tmp = 1.0 - y[i]*work[i];
+  REAL tmp = 1.0 - y[i]*work[i];
   if (tmp < 0.0)
     temp[tid] = 0.0;  
   else
@@ -62,7 +61,7 @@ __global__ static void hinge_loss_sum(double *s, const int m, const int *const _
   
   if (tid == 0)
   {
-    double sum = 0.0;
+    REAL sum = 0.0;
     for (int i=0; i<TPB; i++)
       sum += temp[i];
     
@@ -72,16 +71,17 @@ __global__ static void hinge_loss_sum(double *s, const int m, const int *const _
 
 
 
-static inline double svm_cost(cublasHandle_t handle,
-  const int m, const int n, const double *const __restrict__ x,
-  const int *const __restrict__ y, const double *const __restrict__ w,
-  double *const __restrict__ s, double *const __restrict__ work,
+template <typename REAL>
+static inline REAL svm_cost(cublasHandle_t handle,
+  const int m, const int n, const REAL *const __restrict__ x,
+  const int *const __restrict__ y, const REAL *const __restrict__ w,
+  REAL *const __restrict__ s, REAL *const __restrict__ work,
   const MPI_Comm *const __restrict__ comm)
 {
   int check;
-  double J;
-  double norm;
-  double s_cpu;
+  REAL J;
+  REAL norm;
+  REAL s_cpu;
   
   int nb = m / TPB;
   if (m % TPB)
@@ -96,35 +96,37 @@ static inline double svm_cost(cublasHandle_t handle,
   hinge_loss_sum<<<nb, TPB>>>(s, m, y, work);
   
   cudaMemcpy(&s_cpu, s, sizeof(*s), cudaMemcpyDeviceToHost);
-  J = ((double) 1.0/m) * s_cpu;
+  J = ((REAL) 1.0/m) * s_cpu;
   
   // J = allreduce(J_local) + 1/m * 0.5 * norm2(w)
-  check = MPI_Allreduce(MPI_IN_PLACE, &J, 1, MPI_DOUBLE, MPI_SUM, *comm);
+  check = allreduce1(&J, *comm);
   MPI_CHECK(comm, check);
   
-  J += ((double) 1.0/m) * 0.5 * norm;
+  J += ((REAL) 1.0/m) * 0.5 * norm;
   
   return J;
 }
 
 
 
-static inline void svm_nmwrap(int n, point_t *point, const void *arg)
+template <typename REAL>
+static inline void svm_nmwrap(int n, point_t<REAL> *point, const void *arg)
 {
-  const svm_param_t *args = (const svm_param_t*) arg;
-  cudaMemcpy(args->w, point->x, n*sizeof(double), cudaMemcpyHostToDevice);
+  const svm_param_t<REAL> *args = (const svm_param_t<REAL>*) arg;
+  cudaMemcpy(args->w, point->x, n*sizeof(REAL), cudaMemcpyHostToDevice);
   point->fx = svm_cost(args->handle, args->m, n, args->x, args->y, args->w, args->s, args->work, args->comm);
-  cudaMemcpy(point->x, args->w, n*sizeof(double), cudaMemcpyDeviceToHost);
+  cudaMemcpy(point->x, args->w, n*sizeof(REAL), cudaMemcpyDeviceToHost);
 }
 
 
 
-static inline void svm(const int m, const int n, const double *const __restrict__ x,
-  const int *const __restrict__ y, double *const __restrict__ w, MPI_Comm *const __restrict__ comm,
-  optimset_t *const __restrict__ optimset)
+template <typename REAL>
+static inline void svm(const int m, const int n, const REAL *const __restrict__ x,
+  const int *const __restrict__ y, REAL *const __restrict__ w, MPI_Comm *const __restrict__ comm,
+  optimset_t<REAL> *const __restrict__ optimset)
 {
-  svm_param_t args;
-  point_t start, solution;
+  svm_param_t<REAL> args;
+  point_t<REAL> start, solution;
   
   
   cublasHandle_t handle;
@@ -133,11 +135,11 @@ static inline void svm(const int m, const int n, const double *const __restrict_
     error("cublasCreate() failed\n");
   cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST);
   
-  double *x_gpu;
+  REAL *x_gpu;
   int *y_gpu;
-  double *w_gpu;
-  double *work_gpu;
-  double *s_gpu;
+  REAL *w_gpu;
+  REAL *work_gpu;
+  REAL *s_gpu;
   
   cudaMalloc(&x_gpu, m*n*sizeof(*x_gpu));
   cudaMalloc(&y_gpu, m*sizeof(*y_gpu));
@@ -191,24 +193,37 @@ static inline void svm(const int m, const int n, const double *const __restrict_
 extern "C" SEXP R_svm(SEXP x, SEXP y, SEXP maxiter, SEXP comm_)
 {
   SEXP ret, ret_names, w, niters;
-  optimset_t opts;
   MPI_Comm *comm = get_mpi_comm_from_Robj(comm_);
   const int m = nrows(x);
   const int n = ncols(x);
   
   PROTECT(ret = allocVector(VECSXP, 2));
   PROTECT(ret_names = allocVector(STRSXP, 2));
-  PROTECT(w = allocVector(REALSXP, n));
   PROTECT(niters = allocVector(INTSXP, 1));
+  
+  SET_STRING_ELT(ret_names, 0, mkChar("w"));
+  SET_STRING_ELT(ret_names, 1, mkChar("niters"));
+  
+  if (TYPEOF(x) == REALSXP)
+  {
+    PROTECT(w = allocVector(REALSXP, n));
+    
+    optimset_t<double> opts;
+    set_nm_opts<double>(INTEGER(maxiter)[0], &opts);
+    svm<double>(m, n, REAL(x), INTEGER(y), REAL(w), comm, &opts);
+  }
+  else if (TYPEOF(x) == INTSXP)
+  {
+    PROTECT(w = allocVector(INTSXP, n));
+  
+    optimset_t<float> opts;
+    set_nm_opts<float>(INTEGER(maxiter)[0], &opts);
+    svm<float>(m, n, FLOAT(x), INTEGER(y), FLOAT(w), comm, &opts);
+  }
   
   SET_VECTOR_ELT(ret, 0, w);
   SET_VECTOR_ELT(ret, 1, niters);
-  SET_STRING_ELT(ret_names, 0, mkChar("w"));
-  SET_STRING_ELT(ret_names, 1, mkChar("niters"));
   setAttrib(ret, R_NamesSymbol, ret_names);
-  
-  set_nm_opts(INTEGER(maxiter)[0], &opts);
-  svm(m, n, REAL(x), INTEGER(y), REAL(w), comm, &opts);
   
   UNPROTECT(4);
   return ret;

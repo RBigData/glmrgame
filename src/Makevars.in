@@ -22,7 +22,7 @@ PKG_CFLAGS = $(SPMD_CPPFLAGS)
 PKG_LIBS = $(FLOAT_LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) $(SPMD_LDFLAGS) $(PKG_LIBS_ADDFLAGS)
 
 
-OPTIM_OBJS = nelder-mead/nelder_mead.o
+OPTIM_OBJS = #nelder-mead/nelder_mead.o
 R_OBJS = glmrgame_native.o
 OBJECTS = $(GLM_OBJS) $(OPTIM_OBJS) $(R_OBJS)
 

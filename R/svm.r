@@ -55,12 +55,21 @@ svm_game = function(x, y, maxiter=500)
   maxiter = as.integer(maxiter)
   comm_ptr = pbdMPI::get.mpi.comm.ptr(.pbd_env$SPMD.CT$comm)
   
-  if (!is.double(DATA(x)))
-    storage.mode(x@Data) = "double"
+  if (is.float(DATA(x)))
+    x_data = DATA(x)@Data
+  else
+  {
+    x_data = DATA(x)
+    if (!is.double(x_data))
+      storage.mode(x_data) = "double"
+  }
   
   if (!is.integer(DATA(y)))
     storage.mode(y@Data) = "integer"
   
-  ret = .Call(R_svm, DATA(x), DATA(y), maxiter, comm_ptr)
+  ret = .Call(R_svm, x_data, DATA(y), maxiter, comm_ptr)
+  if (is.float(DATA(x)))
+    ret$w = float32(ret$w)
+  
   ret
 }
