@@ -18,10 +18,9 @@ The development version is maintained on GitHub:
 remotes::install_github("RBigData/glmrgame")
 ```
 
-You will need to have an installation of CUDA to build the package. You can download CUDA from the [nvidia website](https://developer.nvidia.com/cuda-downloads). You will also need the development version of the float, pbdMPI, and kazaam packages (and optionally the curand R package):
+You will need to have an installation of CUDA to build the package. You can download CUDA from the [nvidia website](https://developer.nvidia.com/cuda-downloads). You will also need the development version of the pbdMPI and kazaam packages (and optionally the curand R package):
 
 ```r
-remotes::install_github("wrathematics/float")
 remotes::install_github("wrathematics/pbdMPI")
 remotes::install_github("rbigdata/kazaam")
 remotes::install_github("wrathematics/curand")
