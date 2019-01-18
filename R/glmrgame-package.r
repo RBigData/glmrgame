@@ -4,6 +4,7 @@
 #' 
 #' @import pbdMPI
 #' @import kazaam
+#' @importFrom float is.float float32
 #' 
 #' @name glmrgame-package
 #' @docType package

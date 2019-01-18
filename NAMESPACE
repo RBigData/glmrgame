@@ -3,5 +3,7 @@
 export(svm_game)
 import(kazaam)
 import(pbdMPI)
+importFrom(float,float32)
+importFrom(float,is.float)
 useDynLib(glmrgame,R_glmrgame_init)
 useDynLib(glmrgame,R_svm)
