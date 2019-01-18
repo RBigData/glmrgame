@@ -1,6 +1,12 @@
+#ifndef restrict
+#define restrict __restrict__
+#endif
+
+#define OMPI_SKIP_MPICXX 1
+#include <mpi.h>
+
 #include <cstdlib>
 #include <float/float32.h>
-#include <mpi.h>
 #include <Rinternals.h>
 
 #include "../common.h"
