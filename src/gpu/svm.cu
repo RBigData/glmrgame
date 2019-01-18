@@ -9,7 +9,6 @@
 #include <float/float32.h>
 #include <Rinternals.h>
 
-#include "../common.h"
 #include "../mpi_utils.h"
 #include "../nelder-mead/nelder_mead.hpp"
 #include "../nm.h"
