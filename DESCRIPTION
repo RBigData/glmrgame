@@ -2,7 +2,8 @@ Package: glmrgame
 Type: Package
 Title: TODO
 Version: 0.1-0
-Description: TODO
+Description: Linear and generalized linear models (and support vector machine)
+    for 'GPUs'.
 License: BSD 2-clause License + file LICENSE
 Copyright: See 'glmrgame/src/nelder-mead/LICENSE' for the Nelder-Mead minimizer.
 SystemRequirements: GNU make.

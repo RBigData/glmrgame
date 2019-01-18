@@ -1,6 +1,7 @@
 #' glmrgame
 #' 
-#' TODO
+#' Linear and generalized linear models (and support vector machine)
+#' for 'GPUs'.
 #' 
 #' @import pbdMPI
 #' @import kazaam

@@ -5,7 +5,8 @@
 \alias{glmrgame-package}
 \title{glmrgame}
 \description{
-TODO
+Linear and generalized linear models (and support vector machine)
+for 'GPUs'.
 }
 \references{
 Programming with Big Data in R Website: \url{https://pbdr.org/}
