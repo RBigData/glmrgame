@@ -1,6 +1,4 @@
-#include <mpi.h>
 #include <Rinternals.h>
-
 #include "../mpi_utils.h"
 
 

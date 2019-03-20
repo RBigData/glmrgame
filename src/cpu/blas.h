@@ -9,7 +9,8 @@ void dgemm_(const char *transa, const char *transb, const int *m, const int *n,
 
 // c    = A    *    b
 //  mx1    mxn       nx1
-static inline void mvm(const int m, const int n, const double *const restrict A, const double *const restrict b, double *const restrict c)
+static inline void mvm(const int m, const int n,
+  const double *const restrict A, const double *const restrict b, double *const restrict c)
 {
   const char trans = 'N';
   const double alpha = 1.0;
