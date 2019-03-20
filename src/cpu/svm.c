@@ -108,7 +108,7 @@ SEXP R_svm(SEXP x, SEXP y, SEXP maxiter, SEXP comm_)
 {
   SEXP ret, ret_names, w, niters;
   optimset_t opts;
-  MPI_Comm *comm = get_mpi_comm_from_Robj(comm_);
+  MPI_Comm comm = get_mpi_comm_from_Robj(comm_);
   const int m = nrows(x);
   const int n = ncols(x);
   
@@ -124,7 +124,7 @@ SEXP R_svm(SEXP x, SEXP y, SEXP maxiter, SEXP comm_)
   setAttrib(ret, R_NamesSymbol, ret_names);
   
   set_nm_opts(INTEGER(maxiter)[0], &opts);
-  svm(m, n, REAL(x), INTEGER(y), REAL(w), comm, &opts);
+  svm(m, n, REAL(x), INTEGER(y), REAL(w), &comm, &opts);
   
   UNPROTECT(4);
   return ret;

@@ -98,7 +98,7 @@ static inline REAL svm_cost(cublasHandle_t handle, const int m, const int n,
   J = ((REAL) 1.0/m) * s_cpu;
   
   // J = allreduce(J_local) + 1/m * 0.5 * norm2(w)
-  check = allreduce1(&J, *comm);
+  check = allreduce1(&J, comm);
   MPI_CHECK(comm, check);
   
   J += ((REAL) 1.0/m) * 0.5 * norm;
@@ -192,7 +192,7 @@ static inline void svm(const int m, const int n, const REAL *const restrict x,
 extern "C" SEXP R_svm(SEXP x, SEXP y, SEXP maxiter, SEXP comm_)
 {
   SEXP ret, ret_names, w, niters;
-  MPI_Comm *comm = get_mpi_comm_from_Robj(comm_);
+  MPI_Comm comm = get_mpi_comm_from_Robj(comm_);
   const int m = nrows(x);
   const int n = ncols(x);
   
