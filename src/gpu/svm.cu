@@ -1,7 +1,3 @@
-#ifndef restrict
-#define restrict __restrict__
-#endif
-
 #define OMPI_SKIP_MPICXX 1
 #include <mpi.h>
 
@@ -12,10 +8,10 @@
 #include "../mpi_utils.h"
 #include "../nelder-mead/nelder_mead.hpp"
 #include "../nm.h"
+#include "../restrict.h"
 
 #include "blas.hh"
 #include "cu_utils.hh"
-
 
 
 template <typename REAL>
@@ -23,22 +19,22 @@ struct svm_param_t {
   cublasHandle_t handle;
   int m;
   int n;
-  const REAL *__restrict__ x;
-  const int *__restrict__ y;
-  REAL *__restrict__ w;
-  REAL *__restrict__ work;
-  REAL *__restrict__ s;
-  MPI_Comm *__restrict__ comm;
+  const REAL *restrict x;
+  const int *restrict y;
+  REAL *restrict w;
+  REAL *restrict work;
+  REAL *restrict s;
+  MPI_Comm comm;
 };
 
 
 
-static inline int allreduce1(float *const __restrict__ J, const MPI_Comm comm)
+static inline int allreduce1(float *const restrict J, const MPI_Comm comm)
 {
   return MPI_Allreduce(MPI_IN_PLACE, J, 1, MPI_FLOAT, MPI_SUM, comm);
 }
 
-static inline int allreduce1(double *const __restrict__ J, const MPI_Comm comm)
+static inline int allreduce1(double *const restrict J, const MPI_Comm comm)
 {
   return MPI_Allreduce(MPI_IN_PLACE, J, 1, MPI_DOUBLE, MPI_SUM, comm);
 }
@@ -46,7 +42,7 @@ static inline int allreduce1(double *const __restrict__ J, const MPI_Comm comm)
 
 
 template <typename REAL>
-__global__ static void hinge_loss_sum(REAL *s, const int m, const int *const __restrict__ y, const REAL *const __restrict__ work)
+__global__ static void hinge_loss_sum(REAL *s, const int m, const int *const restrict y, const REAL *const restrict work)
 {
   int tid = threadIdx.x;
   int i = tid + blockIdx.x*blockDim.x;
@@ -77,11 +73,9 @@ __global__ static void hinge_loss_sum(REAL *s, const int m, const int *const __r
 
 
 template <typename REAL>
-static inline REAL svm_cost(cublasHandle_t handle,
-  const int m, const int n, const REAL *const __restrict__ x,
-  const int *const __restrict__ y, const REAL *const __restrict__ w,
-  REAL *const __restrict__ s, REAL *const __restrict__ work,
-  const MPI_Comm *const __restrict__ comm)
+static inline REAL svm_cost(cublasHandle_t handle, const int m, const int n,
+  const REAL *const restrict x, const int *const restrict y, const REAL *const restrict w,
+  REAL *const restrict s, REAL *const restrict work, const MPI_Comm restrict comm)
 {
   int check;
   REAL J;
@@ -126,9 +120,9 @@ static inline void svm_nmwrap(int n, point_t<REAL> *point, const void *arg)
 
 
 template <typename REAL>
-static inline void svm(const int m, const int n, const REAL *const __restrict__ x,
-  const int *const __restrict__ y, REAL *const __restrict__ w, MPI_Comm *const __restrict__ comm,
-  optimset_t<REAL> *const __restrict__ optimset)
+static inline void svm(const int m, const int n, const REAL *const restrict x,
+  const int *const restrict y, REAL *const restrict w, MPI_Comm restrict comm,
+  optimset_t<REAL> *const restrict optimset)
 {
   svm_param_t<REAL> args;
   point_t<REAL> start, solution;
