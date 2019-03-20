@@ -5,10 +5,11 @@
 #include "../mpi_utils.h"
 #include "../nelder-mead/nelder_mead.hpp"
 #include "../nm.h"
-#include "../restrict.h"
 
 #include "blas.hh"
 #include "cu_utils.hh"
+#include "mpicxx.hh"
+#include "restrict.h"
 
 
 template <typename REAL>

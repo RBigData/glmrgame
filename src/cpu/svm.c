@@ -10,7 +10,6 @@
 #include "blas.h"
 
 
-
 typedef struct {
   int m;
   int n;
@@ -30,6 +29,8 @@ static inline double euc_norm_sq(const int n, const double *const restrict x)
   
   return norm;
 }
+
+
 
 static inline double hinge_loss_sum(const int n, double *const restrict x)
 {
@@ -68,11 +69,15 @@ static inline double svm_cost(const int m, const int n, const double *const rest
   return J;
 }
 
+
+
 static inline void svm_nmwrap(int n, point_t *point, const void *arg)
 {
   const svm_param_t *args = (const svm_param_t*) arg;
   point->fx = svm_cost(args->m, n, args->x, args->y, point->x, args->work, args->comm);
 }
+
+
 
 static inline void svm(const int m, const int n, const double *const restrict x,
   const int *const restrict y, double *const restrict w, MPI_Comm *const restrict comm,
