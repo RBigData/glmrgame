@@ -91,7 +91,7 @@ static inline REAL svm_cost(cublasHandle_t handle, const int m, const int n,
   
   mvm(handle, m, n, x, w, work);
   
-  cudaMemset(s, 0, 1*sizeof(*s));
+  cudaMemset(s, 0, sizeof(*s));
   hinge_loss_sum<<<nb, TPB>>>(s, m, y, work);
   
   cudaMemcpy(&s_cpu, s, sizeof(*s), cudaMemcpyDeviceToHost);
