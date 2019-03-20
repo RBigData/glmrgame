@@ -73,10 +73,15 @@ __global__ static void hinge_loss_sum(REAL *s, const int m, const int *const res
 
 
 template <typename REAL>
-static inline REAL svm_cost(cublasHandle_t handle, const int m, const int n,
-  const REAL *const restrict x, const int *const restrict y, const REAL *const restrict w,
-  REAL *const restrict s, REAL *const restrict work, const MPI_Comm restrict comm)
+static inline REAL svm_cost(const svm_param_t<REAL> *restrict args)
 {
+  const int m = args->m;
+  const int n = args->n;
+  const REAL *const restrict x = args->x;
+  const int *const restrict y = args->y;
+  const REAL *const restrict w = args->w;
+  REAL *const restrict s = args->s;
+  REAL *const restrict work = args->work;
   int check;
   REAL J;
   REAL norm;
@@ -87,9 +92,9 @@ static inline REAL svm_cost(cublasHandle_t handle, const int m, const int n,
     nb++;
   
   // J_local = 1/m * sum(hinge_loss(1.0 - y * (x %*% w)))
-  norm = euc_norm_sq(handle, n, w);
+  norm = euc_norm_sq(args->handle, n, w);
   
-  mvm(handle, m, n, x, w, work);
+  mvm(args->handle, m, n, x, w, work);
   
   cudaMemset(s, 0, sizeof(*s));
   hinge_loss_sum<<<nb, TPB>>>(s, m, y, work);
@@ -98,8 +103,8 @@ static inline REAL svm_cost(cublasHandle_t handle, const int m, const int n,
   J = ((REAL) 1.0/m) * s_cpu;
   
   // J = allreduce(J_local) + 1/m * 0.5 * norm2(w)
-  check = allreduce1(&J, comm);
-  MPI_CHECK(comm, check);
+  check = allreduce1(&J, args->comm);
+  MPI_CHECK(args->comm, check);
   
   J += ((REAL) 1.0/m) * 0.5 * norm;
   
@@ -111,9 +116,9 @@ static inline REAL svm_cost(cublasHandle_t handle, const int m, const int n,
 template <typename REAL>
 static inline void svm_nmwrap(int n, point_t<REAL> *point, const void *arg)
 {
-  const svm_param_t<REAL> *args = (const svm_param_t<REAL>*) arg;
+  const svm_param_t<REAL> *restrict args = (const svm_param_t<REAL>*) arg;
   cudaMemcpy(args->w, point->x, n*sizeof(REAL), cudaMemcpyHostToDevice);
-  point->fx = svm_cost(args->handle, args->m, n, args->x, args->y, args->w, args->s, args->work, args->comm);
+  point->fx = svm_cost(args);
   cudaMemcpy(point->x, args->w, n*sizeof(REAL), cudaMemcpyDeviceToHost);
 }
 
