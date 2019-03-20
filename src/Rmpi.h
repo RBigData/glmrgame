@@ -1,8 +1,10 @@
-#ifndef GLMRGAME_MPIUTILS_
-#define GLMRGAME_MPIUTILS_
+#ifndef GLMRGAME_RMPI_H_
+#define GLMRGAME_RMPI_H_
 
 
+#ifdef __cplusplus
 #define OMPI_SKIP_MPICXX 1
+#endif
 #include <mpi.h>
 #include <Rinternals.h>
 

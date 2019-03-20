@@ -2,8 +2,8 @@
 #include <float/float32.h>
 #include <Rinternals.h>
 
-#include "../mpi_utils.h"
 #include "../nelder-mead/nelder_mead.hpp"
+#include "../Rmpi.h"
 
 #include "blas.hh"
 #include "cu_utils.hh"

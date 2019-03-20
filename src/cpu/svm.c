@@ -5,7 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../mpi_utils.h"
+#include "../Rmpi.h"
+
 #include "blas.h"
 #include "nm_opts.h"
 
