@@ -6,8 +6,8 @@
 #include <string.h>
 
 #include "../mpi_utils.h"
-#include "../nm.h"
 #include "blas.h"
+#include "nm_opts.h"
 
 
 typedef struct {

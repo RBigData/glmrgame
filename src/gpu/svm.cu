@@ -4,11 +4,11 @@
 
 #include "../mpi_utils.h"
 #include "../nelder-mead/nelder_mead.hpp"
-#include "../nm.h"
 
 #include "blas.hh"
 #include "cu_utils.hh"
 #include "mpicxx.hh"
+#include "nm_opts.hh"
 #include "restrict.h"
 
 
@@ -199,7 +199,7 @@ extern "C" SEXP R_svm(SEXP x, SEXP y, SEXP maxiter, SEXP comm_)
     PROTECT(w = allocVector(REALSXP, n));
     
     optimset_t<double> opts;
-    set_nm_opts<double>(INTEGER(maxiter)[0], &opts);
+    set_nm_opts(INTEGER(maxiter)[0], &opts);
     svm<double>(m, n, REAL(x), INTEGER(y), REAL(w), comm, &opts);
   }
   else if (TYPEOF(x) == INTSXP)
@@ -207,7 +207,7 @@ extern "C" SEXP R_svm(SEXP x, SEXP y, SEXP maxiter, SEXP comm_)
     PROTECT(w = allocVector(INTSXP, n));
   
     optimset_t<float> opts;
-    set_nm_opts<float>(INTEGER(maxiter)[0], &opts);
+    set_nm_opts(INTEGER(maxiter)[0], &opts);
     svm<float>(m, n, FLOAT(x), INTEGER(y), FLOAT(w), comm, &opts);
   }
   
