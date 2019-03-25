@@ -1,6 +1,7 @@
 #ifndef GLMRGAME_NM_H_
 #define GLMRGAME_NM_H_
 
+#include "../nelder-mead/nelder_mead.hpp"
 
 // tolx - tolerance on the simplex solutions coordinates
 // tolf - tolerance on the function value
