@@ -73,9 +73,7 @@ static inline REAL svm_cost(const svm_param_t<REAL> *restrict args)
   REAL norm;
   REAL s_cpu;
   
-  int nb = m / TPB;
-  if (m % TPB)
-    nb++;
+  int nb = get_num_blocks(m);
   
   // J_local = 1/m * sum(hinge_loss(1.0 - y * (x %*% w)))
   norm = euc_norm_sq(args->handle, n, w);
