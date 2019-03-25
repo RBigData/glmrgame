@@ -9,7 +9,7 @@ R_CPPFLAGS = @R_CPPFLAGS@
 BACKEND = @BACKEND@
 
 ifeq "$(BACKEND)" "GPU"
-	GLM_OBJS = gpu/init.o gpu/svm.o
+	GLM_OBJS = gpu/init.o gpu/lm.o gpu/svm.o
 	NVCC = @NVCC@
 	CUDA_CFLAGS = @CUDA_CFLAGS@
 	CUDA_LDFLAGS = @CUDA_LDFLAGS@
