@@ -15,7 +15,7 @@ ifeq "$(BACKEND)" "GPU"
 	CUDA_LDFLAGS = @CUDA_LDFLAGS@
 	PKG_LIBS_ADDFLAGS = $(CUDA_LDFLAGS) -lcudart -lcublas
 else
-	GLM_OBJS = cpu/init.o cpu/svm.o
+	GLM_OBJS = cpu/init.o cpu/svm.o nelder-mead/nelder_mead.o
 endif
 
 PKG_CFLAGS = $(SPMD_CPPFLAGS)
