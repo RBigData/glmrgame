@@ -1,6 +1,6 @@
 #include <cuda_runtime.h>
 #include <Rinternals.h>
-#include "../mpi_utils.h"
+#include "../Rmpi.h"
 
 
 extern "C" SEXP R_glmrgame_init(SEXP comm_)

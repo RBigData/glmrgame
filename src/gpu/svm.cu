@@ -205,7 +205,7 @@ extern "C" SEXP R_svm(SEXP x, SEXP y, SEXP maxiter, SEXP comm_)
   else if (TYPEOF(x) == INTSXP)
   {
     PROTECT(w = allocVector(INTSXP, n));
-  
+    
     optimset_t<float> opts;
     set_nm_opts(INTEGER(maxiter)[0], &opts);
     svm<float>(m, n, FLOAT(x), INTEGER(y), FLOAT(w), comm, &opts);
