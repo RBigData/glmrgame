@@ -21,10 +21,11 @@ AC_ARG_WITH(backend,
   [BACKEND=$withval], 
   [BACKEND="GPU"]
 )
-if test "X${BACKEND}" = "XGPU"; then
+if test "X${BACKEND}" = "XGPU" -o "X${BACKEND}" = "Xgpu"; then
   AX_CHECK_CUDA()
-elif test "X${BACKEND}" = "XCPU"; then
-  ASDF="QWERTY"
+  BACKEND="GPU"
+elif test "X${BACKEND}" = "XCPU" -o "X${BACKEND}" = "Xcpu"; then
+  BACKEND="CPU"
 else
   AC_MSG_ERROR([backend must be GPU or CPU.])
 fi

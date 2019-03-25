@@ -2815,7 +2815,7 @@ else
 
 fi
 
-if test "X${BACKEND}" = "XGPU"; then
+if test "X${BACKEND}" = "XGPU" -o "X${BACKEND}" = "Xgpu"; then
 
 
 
@@ -2942,8 +2942,9 @@ CFLAGS=${ax_save_CFLAGS}
 LDFLAGS=${ax_save_LDFLAGS}
 
 
-elif test "X${BACKEND}" = "XCPU"; then
-  ASDF="QWERTY"
+  BACKEND="GPU"
+elif test "X${BACKEND}" = "XCPU" -o "X${BACKEND}" = "Xcpu"; then
+  BACKEND="CPU"
 else
   as_fn_error $? "backend must be GPU or CPU." "$LINENO" 5
 fi
