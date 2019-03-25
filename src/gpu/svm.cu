@@ -112,7 +112,7 @@ static inline void svm_nmwrap(int n, point_t<REAL> *point, const void *arg)
 
 template <typename REAL>
 static inline void svm(const int m, const int n, const REAL *const restrict x,
-  const int *const restrict y, REAL *const restrict w, MPI_Comm restrict comm,
+  const int *const restrict y, REAL *const restrict w, MPI_Comm comm,
   optimset_t<REAL> *const restrict optimset)
 {
   svm_param_t<REAL> args;

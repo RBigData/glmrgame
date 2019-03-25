@@ -17,7 +17,7 @@ typedef struct {
   const double *restrict x;
   const int *restrict y;
   double *restrict work;
-  MPI_Comm *restrict comm;
+  MPI_Comm comm;
 } svm_param_t;
 
 
@@ -49,7 +49,7 @@ static inline double hinge_loss_sum(const int n, double *const restrict x)
 
 static inline double svm_cost(const int m, const int n, const double *const restrict x,
   const int *const restrict y, const double *const restrict w,
-  double *const restrict work, const MPI_Comm *const restrict comm)
+  double *const restrict work, const MPI_Comm comm)
 {
   int check;
   double J;
@@ -62,7 +62,7 @@ static inline double svm_cost(const int m, const int n, const double *const rest
   J = ((double) 1.0/m) * hinge_loss_sum(m, work);
   
   // J = allreduce(J_local) + 1/m * 0.5 * norm2(w)
-  check = MPI_Allreduce(MPI_IN_PLACE, &J, 1, MPI_DOUBLE, MPI_SUM, *comm);
+  check = MPI_Allreduce(MPI_IN_PLACE, &J, 1, MPI_DOUBLE, MPI_SUM, comm);
   MPI_CHECK(comm, check);
   
   J += ((double) 1.0/m) * 0.5 * euc_norm_sq(n, w);
@@ -81,7 +81,7 @@ static inline void svm_nmwrap(int n, point_t *point, const void *arg)
 
 
 static inline void svm(const int m, const int n, const double *const restrict x,
-  const int *const restrict y, double *const restrict w, MPI_Comm *const restrict comm,
+  const int *const restrict y, double *const restrict w, MPI_Comm comm,
   optimset_t *const restrict optimset)
 {
   svm_param_t args;
@@ -130,7 +130,7 @@ SEXP R_svm(SEXP x, SEXP y, SEXP maxiter, SEXP comm_)
   setAttrib(ret, R_NamesSymbol, ret_names);
   
   set_nm_opts(INTEGER(maxiter)[0], &opts);
-  svm(m, n, REAL(x), INTEGER(y), REAL(w), &comm, &opts);
+  svm(m, n, REAL(x), INTEGER(y), REAL(w), comm, &opts);
   
   UNPROTECT(4);
   return ret;
