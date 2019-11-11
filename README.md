@@ -33,6 +33,24 @@ remotes::install_github("rbigdata/glmrgame", configure.args="--with-backend=CPU"
 ```
 
 
+## Examples
+
+```r
+suppressMessages(library(kazaam))
+suppressMessages(library(glmrgame))
+
+data(iris)
+is_setosa = expand((iris[, 5] == "setosa")*2 - 1)
+iris = expand(as.matrix(iris[, -5]))
+iris = cbind(shaq(1, nrow=nrow(iris), ncol=1), iris)
+
+w_cpu = svm(iris, is_setosa)
+w_gpu = svm_game(iris, is_setosa)
+
+finalize()
+```
+
+
 
 ## Benchmarks
 
